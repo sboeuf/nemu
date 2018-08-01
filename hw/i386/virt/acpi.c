@@ -29,6 +29,7 @@
 #include "hw/acpi/acpi.h"
 #include "hw/acpi/cpu.h"
 #include "hw/acpi/cpu_hotplug.h"
+#include "hw/acpi/pcihp.h"
 #include "hw/acpi/acpi_dev_interface.h"
 
 typedef struct VirtAcpiState {
@@ -37,7 +38,10 @@ typedef struct VirtAcpiState {
     AcpiCpuHotplug cpuhp;
     CPUHotplugState cpuhp_state;
 
+    AcpiPciHpState pcihp_state;
+
     qemu_irq *gsi;
+    PCIBus *pci_bus;
 } VirtAcpiState;
 
 #define TYPE_VIRT_ACPI "virt-acpi"
@@ -57,7 +61,9 @@ static void virt_device_plug_cb(HotplugHandler *hotplug_dev,
 
     if (object_dynamic_cast(OBJECT(dev), TYPE_CPU)) {
         acpi_cpu_plug_cb(hotplug_dev, &s->cpuhp_state, dev, errp);
-    }  else {
+    } else if (object_dynamic_cast(OBJECT(dev), TYPE_PCI_DEVICE)) {
+        acpi_pcihp_device_plug_cb(hotplug_dev, &s->pcihp_state, dev, errp);
+    } else {
         error_setg(errp, "virt: device plug request for unsupported device"
                    " type: %s", object_get_typename(OBJECT(dev)));
     }
@@ -70,6 +76,8 @@ static void virt_device_unplug_request_cb(HotplugHandler *hotplug_dev,
 
     if (object_dynamic_cast(OBJECT(dev), TYPE_CPU)) {
         acpi_cpu_unplug_request_cb(hotplug_dev, &s->cpuhp_state, dev, errp);
+    } else if (object_dynamic_cast(OBJECT(dev), TYPE_PCI_DEVICE)) {
+        acpi_pcihp_device_unplug_cb(hotplug_dev, &s->pcihp_state, dev, errp);
     } else {
         error_setg(errp, "virt: device unplug request for unsupported device"
                    " type: %s", object_get_typename(OBJECT(dev)));
@@ -100,6 +108,9 @@ static void virt_send_ged(AcpiDeviceIf *adev, AcpiEventStatusBits ev)
     if (ev & ACPI_CPU_HOTPLUG_STATUS) {
         /* We inject the CPU hotplug interrupt */
         qemu_irq_pulse(s->gsi[VIRT_GED_CPU_HOTPLUG_IRQ]);
+    } else if (ev & ACPI_PCI_HOTPLUG_STATUS) {
+        /* Inject PCI hotplug interrupt */
+	qemu_irq_pulse(s->gsi[VIRT_GED_PCI_HOTPLUG_IRQ]);
     }
 }
 
@@ -114,11 +125,12 @@ static void virt_device_realize(DeviceState *dev, Error **errp)
 
     s->cpuhp.device = OBJECT(s);
 
+    /* Initialize CPU hotplug */
     cpu_hotplug_hw_init(get_system_io(), s->cpuhp.device,
                         &s->cpuhp_state, VIRT_CPU_HOTPLUG_IO_BASE);
 }
 
-DeviceState *virt_acpi_init(qemu_irq *gsi)
+DeviceState *virt_acpi_init(qemu_irq *gsi, PCIBus *pci_bus)
 {
     DeviceState *dev;
     VirtAcpiState *s;
@@ -127,7 +139,15 @@ DeviceState *virt_acpi_init(qemu_irq *gsi)
 
     s = VIRT_ACPI(dev);
     s->gsi = gsi;
+    s->pci_bus = pci_bus;
 
+    /* Initialize PCI hotplug */
+/*    acpi_pcihp_reset(&s->pcihp_state);
+    acpi_pcihp_init(OBJECT(s), &s->pcihp_state, s->pci_bus,
+                    get_system_io(), true);
+
+    qbus_set_hotplug_handler(BUS(pci_bus), dev, NULL);    
+*/
     return dev;
 }
 

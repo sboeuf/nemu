@@ -105,6 +105,10 @@ static void acpi_conf_virt_init(MachineState *machine, AcpiConfiguration *conf)
             .irq   = VIRT_GED_CPU_HOTPLUG_IRQ,
             .event = GED_CPU_HOTPLUG,
         },
+	{
+            .irq   = VIRT_GED_PCI_HOTPLUG_IRQ,
+            .event = GED_PCI_HOTPLUG,
+        },
     };
 
     events_size = ARRAY_SIZE(events);
@@ -197,7 +201,7 @@ static void virt_machine_state_init(MachineState *machine)
     virt_memory_init(vms);
     virt_pci_init(vms);
     virt_ioapic_init(vms);
-    vms->acpi = virt_acpi_init(vms->gsi);
+    vms->acpi = virt_acpi_init(vms->gsi, vms->pci_bus);
 
     vms->apic_id_limit = cpus_init(machine, false);
 
@@ -336,7 +340,9 @@ static void virt_cpu_plug(HotplugHandler *hotplug_dev,
     VirtMachineState *vms = VIRT_MACHINE(hotplug_dev);
     HotplugHandlerClass *hhc;
 
-    /* We only support ACPI CPU hotplug/unplug */
+    /* We support ACPI CPU hotplug/unplug and ACPI PCI device
+     * hotplug/unplug.
+     */
     assert(vms->acpi);
 
     /* Call ACPI hotplug */
@@ -474,7 +480,9 @@ static void virt_cpu_unplug_request_cb(HotplugHandler *hotplug_dev,
     X86CPU *cpu = X86_CPU(dev);
     VirtMachineState *vms = VIRT_MACHINE(hotplug_dev);
 
-    /* We only support ACPI CPU hotplug/unplug */
+    /* We support ACPI CPU hotplug/unplug and ACPI PCI device
+     * hotplug/unplug.
+     */
     assert(vms->acpi);
 
     cpu_find_slot(MACHINE(vms), cpu->apic_id, &idx);
@@ -500,7 +508,9 @@ static void virt_cpu_unplug_cb(HotplugHandler *hotplug_dev,
     X86CPU *cpu = X86_CPU(dev);
     VirtMachineState *vms = VIRT_MACHINE(hotplug_dev);
 
-    /* We only support ACPI CPU hotplug/unplug */
+    /* We support ACPI CPU hotplug/unplug and ACPI PCI device
+     * hotplug/unplug.
+     */
     assert(vms->acpi);
 
     hhc = HOTPLUG_HANDLER_GET_CLASS(vms->acpi);
