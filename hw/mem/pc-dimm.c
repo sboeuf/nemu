@@ -180,10 +180,19 @@ static void pc_dimm_init(Object *obj)
                         NULL, NULL, NULL, &error_abort);
 }
 
+// 128MiB requirement for alignment on Linux
+#define LINUX_SPARSE_MEMORY_ALIGNMENT 0x8000000
+
 static void pc_dimm_realize(DeviceState *dev, Error **errp)
 {
+    Error *local_err = NULL;
+    uint64_t align = 0x1000;
     PCDIMMDevice *dimm = PC_DIMM(dev);
     PCDIMMDeviceClass *ddc = PC_DIMM_GET_CLASS(dimm);
+    Object *m_obj = qdev_get_machine();
+    MachineState *ms = MACHINE(m_obj);
+    MemoryRegion *mr;
+    uint64_t free_addr;
 
     if (!dimm->hostmem) {
         error_setg(errp, "'" PC_DIMM_MEMDEV_PROP "' property is not set");
@@ -207,6 +216,29 @@ static void pc_dimm_realize(DeviceState *dev, Error **errp)
     }
 
     host_memory_backend_set_mapped(dimm->hostmem, true);
+
+    /* PLUG */
+    mr = ddc->get_memory_region(dimm, &local_err);
+    if (memory_region_get_alignment(mr)) {
+        align = memory_region_get_alignment(mr);
+    }
+
+    free_addr = memory_device_get_free_addr(ms, NULL, align,
+                                            memory_region_size(mr), &local_err);
+    if (local_err) {
+        goto out;
+    }
+
+    dimm->addr = ROUND_UP(free_addr, LINUX_SPARSE_MEMORY_ALIGNMENT);
+
+    pc_dimm_plug(dev, ms, align, &local_err);
+    if (local_err) {
+        goto out;
+    }
+    /* End of PLUG */
+
+out:
+    error_propagate(errp, local_err);
 }
 
 static void pc_dimm_unrealize(DeviceState *dev, Error **errp)

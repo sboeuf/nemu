@@ -512,21 +512,7 @@ void build_memory_hotplug_aml(Aml *table, uint32_t nr_mem,
 
         method = aml_method(MEMORY_SLOT_STATUS_METHOD, 1, AML_NOTSERIALIZED);
         {
-            Aml *slot_enabled = aml_name(MEMORY_SLOT_ENABLED);
-
-            aml_append(method, aml_store(zero, ret_val));
-            aml_append(method, aml_acquire(ctrl_lock, 0xFFFF));
-            aml_append(method,
-                aml_store(aml_to_integer(slot_arg0), slot_selector));
-
-            ifctx = aml_if(aml_equal(slot_enabled, one));
-            {
-                aml_append(ifctx, aml_store(aml_int(0xF), ret_val));
-            }
-            aml_append(method, ifctx);
-
-            aml_append(method, aml_release(ctrl_lock));
-            aml_append(method, aml_return(ret_val));
+            aml_append(method, aml_return(aml_int(0xF)));
         }
         aml_append(dev_container, method);
 

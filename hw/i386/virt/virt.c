@@ -233,12 +233,12 @@ static void virt_machine_state_init(MachineState *machine)
                         val, sizeof(*val));
     }
 
-#ifdef VIRT_HOTPLUG
+//#ifdef VIRT_HOTPLUG
     if (vms->acpi_conf.acpi_nvdimm_state.is_enabled) {
         nvdimm_init_acpi_state(&vms->acpi_conf.acpi_nvdimm_state, get_system_io(),
                                fw_cfg, OBJECT(vms));
     }
-#endif
+//#endif
     
     vms->acpi_conf.fw_cfg = fw_cfg;
     acpi_conf_virt_init(machine);
@@ -277,10 +277,10 @@ static void virt_machine_instance_init(Object *obj)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
 
-#ifdef VIRT_HOTPLUG
+//#ifdef VIRT_HOTPLUG
     /* Disable NVDIMM by default */
     vms->acpi_conf.acpi_nvdimm_state.is_enabled = false;
-#endif
+//#endif
 }
 
 static void virt_machine_reset(void)
@@ -324,12 +324,13 @@ static void virt_class_init(ObjectClass *oc, void *data)
     /* NMI handler */
     nc->nmi_monitor_handler = x86_nmi;
 
-#ifdef VIRT_HOTPLUG
+//#ifdef VIRT_HOTPLUG
     /* NVDIMM property */
     object_class_property_add_bool(oc, VIRT_MACHINE_NVDIMM,
                                    virt_machine_get_nvdimm,
                                    virt_machine_set_nvdimm,
                                    &error_abort);
+#ifdef VIRT_HOTPLUG
     /* MEMHP setting */
     object_class_property_add(oc, MEMORY_DEVICE_REGION_SIZE, "int",
                               virt_machine_get_device_memory_region_size, NULL,
