@@ -38,6 +38,8 @@
 #include "hw/acpi/ged.h"
 
 #include "hw/pci/pci.h"
+#include "hw/pci/msi.h"
+#include "hw/i386/apic_internal.h"
 
 typedef struct VirtAcpiState {
     SysBusDevice parent_obj;
@@ -148,6 +150,13 @@ static void virt_send_ged(AcpiDeviceIf *adev, AcpiEventStatusBits ev)
      * The IRQ selector will make the difference from the ACPI table.
      */
     acpi_ged_event(&s->ged_state, s->gsi, sel);
+    // Send MSI message
+    MSIMessage msi;
+
+    msi.address = 0xfee00000;
+    msi.data = 0x4021;
+
+    apic_get_class()->send_msi(&msi);
 }
 
 static int virt_device_sysbus_init(SysBusDevice *dev)

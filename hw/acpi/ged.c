@@ -74,7 +74,7 @@ void acpi_ged_event(GEDState *ged_st, qemu_irq *irq, uint32_t ged_irq_sel)
     qemu_mutex_unlock(&ged_st->lock);
 
     /* Trigger the event by sending an interrupt to the guest. */
-    qemu_irq_pulse(irq[ged_st->irq]);
+//    qemu_irq_pulse(irq[ged_st->irq]);
 }
 
 static Aml *ged_event_aml(GedEvent *event)
