@@ -40,6 +40,13 @@
 #define ACPI_GED_IO_LEN           (ACPI_GED_IRQ_REG_LEN + \
                                    ACPI_GED_MSI_REG_LEN)
 
+#define ACPI_OPREG_MNAH_OFFSET 0x4
+#define ACPI_OPREG_MNAL_OFFSET 0x8
+#define ACPI_OPREG_MXAH_OFFSET 0xC
+#define ACPI_OPREG_MXAL_OFFSET 0x10
+#define ACPI_OPREG_MNDT_OFFSET 0x14
+#define ACPI_OPREG_MXDT_OFFSET 0x18
+
 #define GED_DEVICE              "GED"
 #define AML_GED_IRQ_REG         "IREG"
 #define AML_GED_IRQ_SEL         "ISEL"
@@ -81,6 +88,12 @@ typedef struct GEDState {
     MemoryRegion io;
     uint32_t     sel;
     uint32_t     irq;
+    uint32_t     msi_min_addr_hi;
+    uint32_t     msi_min_addr_lo;
+    uint32_t     msi_max_addr_hi;
+    uint32_t     msi_max_addr_lo;
+    uint32_t     msi_min_data;
+    uint32_t     msi_max_data;
     QemuMutex    lock;
 } GEDState;
 
