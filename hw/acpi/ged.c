@@ -59,7 +59,7 @@ void acpi_ged_init(MemoryRegion *as, Object *owner, GEDState *ged_st,
     qemu_mutex_init(&ged_st->lock);
     ged_st->irq = ged_irq;
     memory_region_init_io(&ged_st->io, owner, &ged_ops, ged_st,
-                          "acpi-ged-event", ACPI_GED_REG_LEN);
+                          "acpi-ged-event", ACPI_GED_IO_LEN);
     memory_region_add_subregion(as, base_addr, &ged_st->io);
 }
 
@@ -182,14 +182,53 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     aml_append(dev, aml_name_decl("_UID", zero));
     aml_append(dev, aml_name_decl("_CRS", crs));
 
-    /* Append IO region */
+    /* Append IO region to get selector value */
     aml_append(dev, aml_operation_region(AML_GED_IRQ_REG, AML_SYSTEM_IO,
                aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_IRQ_SEL_OFFSET),
-               ACPI_GED_IRQ_SEL_LEN));
+               ACPI_GED_IRQ_REG_LEN));
+    /* Append new field IREG */
     field = aml_field(AML_GED_IRQ_REG, AML_DWORD_ACC, AML_NOLOCK,
-                      AML_WRITE_AS_ZEROS);
-    aml_append(field, aml_named_field(AML_GED_IRQ_SEL,
-                                      ACPI_GED_IRQ_SEL_LEN * 8));
+                          AML_WRITE_AS_ZEROS);
+    {
+        /* Append new entry ISEL to retrieve selector value */
+        aml_append(field, aml_named_field(AML_GED_IRQ_SEL,
+                                          ACPI_GED_IRQ_SEL_LEN * 8));
+    }
+    aml_append(dev, field);
+
+    /* Append IO regions to write MSI parameters to the hypervisor */
+    /* MADR operation region */
+    aml_append(dev, aml_operation_region(AML_GED_MSI_ADDR_REG, AML_SYSTEM_IO,
+               aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_MSI_ADDR_OFFSET),
+               ACPI_GED_MSI_ADDR_REG_LEN));
+    /* Append new field to MADR */
+    field = aml_field(AML_GED_MSI_ADDR_REG, AML_QWORD_ACC, AML_NOLOCK,
+                          AML_WRITE_AS_ZEROS);
+    {
+        /* Append new entry MNAD */
+        aml_append(field, aml_named_field(AML_GED_MSI_MIN_ADDR,
+                                          ACPI_GED_MSI_QWORD_LEN * 8));
+        /* Append new entry MXAD */
+        aml_append(field, aml_named_field(AML_GED_MSI_MAX_ADDR,
+                                          ACPI_GED_MSI_QWORD_LEN * 8));
+    }
+    aml_append(dev, field);
+
+    /* MDAT operation region */
+    aml_append(dev, aml_operation_region(AML_GED_MSI_DATA_REG, AML_SYSTEM_IO,
+               aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_MSI_DATA_OFFSET),
+               ACPI_GED_MSI_DATA_REG_LEN));
+    /* Append new field to MDAT */
+    field = aml_field(AML_GED_MSI_DATA_REG, AML_DWORD_ACC, AML_NOLOCK,
+                          AML_WRITE_AS_ZEROS);
+    {
+        /* Append new entry MNDT */
+        aml_append(field, aml_named_field(AML_GED_MSI_MIN_DATA,
+                                          ACPI_GED_MSI_DWORD_LEN * 8));
+        /* Append new entry MXDT */
+        aml_append(field, aml_named_field(AML_GED_MSI_MAX_DATA,
+                                          ACPI_GED_MSI_DWORD_LEN * 8));
+    }
     aml_append(dev, field);
 
     /* Append _EVT method */

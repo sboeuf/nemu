@@ -26,18 +26,33 @@
 
 #define ACPI_GED_EVENT_IO_BASE 0xb000
 
-#define ACPI_GED_IRQ_SEL_OFFSET 0x0
-#define ACPI_GED_IRQ_SEL_LEN    0x4
-#define ACPI_GED_IRQ_SEL_INIT   0x0
-#define ACPI_GED_IRQ_SEL_CPU    0x1
-#define ACPI_GED_IRQ_SEL_MEM    0x2
-#define ACPI_GED_IRQ_SEL_NVDIMM 0x4
-#define ACPI_GED_IRQ_SEL_PCI    0x8
-#define ACPI_GED_REG_LEN        0x4
+#define ACPI_GED_IRQ_SEL_OFFSET   0x0
+#define ACPI_GED_IRQ_SEL_LEN      0x4
+#define ACPI_GED_IRQ_SEL_INIT     0x0
+#define ACPI_GED_IRQ_SEL_CPU      0x1
+#define ACPI_GED_IRQ_SEL_MEM      0x2
+#define ACPI_GED_IRQ_SEL_NVDIMM   0x4
+#define ACPI_GED_IRQ_SEL_PCI      0x8
+#define ACPI_GED_IRQ_REG_LEN      ACPI_GED_IRQ_SEL_LEN
+#define ACPI_GED_MSI_ADDR_OFFSET  0x4
+#define ACPI_GED_MSI_DATA_OFFSET  0x14
+#define ACPI_GED_MSI_ADDR_REG_LEN 0x10
+#define ACPI_GED_MSI_DATA_REG_LEN 0x8
+#define ACPI_GED_MSI_DWORD_LEN    0x4
+#define ACPI_GED_MSI_QWORD_LEN    0x8
+#define ACPI_GED_IO_LEN           (ACPI_GED_IRQ_REG_LEN + \
+                                   ACPI_GED_MSI_ADDR_REG_LEN + \
+                                   ACPI_GED_MSI_DATA_REG_LEN)
 
-#define GED_DEVICE      "GED"
-#define AML_GED_IRQ_REG "IREG"
-#define AML_GED_IRQ_SEL "ISEL"
+#define GED_DEVICE           "GED"
+#define AML_GED_IRQ_REG      "IREG"
+#define AML_GED_IRQ_SEL      "ISEL"
+#define AML_GED_MSI_ADDR_REG "MADR"
+#define AML_GED_MSI_MIN_ADDR "MNAD"
+#define AML_GED_MSI_MAX_ADDR "MXAD"
+#define AML_GED_MSI_DATA_REG "MDAT"
+#define AML_GED_MSI_MIN_DATA "MNDT"
+#define AML_GED_MSI_MAX_DATA "MXDT"
 
 typedef struct Aml Aml;
 
