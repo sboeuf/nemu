@@ -30,6 +30,18 @@ static uint64_t ged_read(void *opaque, hwaddr addr, unsigned size)
         ged_st->sel = ACPI_GED_IRQ_SEL_INIT;
         qemu_mutex_unlock(&ged_st->lock);
         break;
+    case ACPI_OPREG_MNAD_OFFSET:
+        val = ged_st->msi_min_addr;
+        break;
+    case ACPI_OPREG_MXAD_OFFSET:
+        val = ged_st->msi_max_addr;
+        break;
+    case ACPI_OPREG_MNDT_OFFSET:
+        val = ged_st->msi_min_data;
+        break;
+    case ACPI_OPREG_MXDT_OFFSET:
+        val = ged_st->msi_max_data;
+        break;
     default:
         break;
     }
@@ -37,10 +49,25 @@ static uint64_t ged_read(void *opaque, hwaddr addr, unsigned size)
     return val;
 }
 
-/* Nothing is expected to be written to the GED memory region */
 static void ged_write(void *opaque, hwaddr addr, uint64_t data,
                       unsigned int size)
 {
+    GEDState *ged_st = opaque;
+
+    switch (addr) {
+    case ACPI_OPREG_MNAD_OFFSET:
+        ged_st->msi_min_addr = data;
+        break;
+    case ACPI_OPREG_MXAD_OFFSET:
+        ged_st->msi_max_addr = data;
+        break;
+    case ACPI_OPREG_MNDT_OFFSET:
+        ged_st->msi_min_data = data;
+        break;
+    case ACPI_OPREG_MXDT_OFFSET:
+        ged_st->msi_max_data = data;
+        break;
+    }
 }
 
 static const MemoryRegionOps ged_ops = {
