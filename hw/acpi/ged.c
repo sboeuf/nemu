@@ -204,7 +204,15 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     aml_append(dev, aml_operation_region(AML_GED_IRQ_REG, AML_SYSTEM_IO,
                aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_IRQ_SEL_OFFSET),
                ACPI_GED_IRQ_REG_LEN));
-    /* Append new field IREG */
+    /*
+     * Append new IREG OperationRegion and Field
+     *
+     * OperationRegion (IREG, SystemIO, 0xB000, 0x04)
+     * Field (IREG, DWordAcc, NoLock, WriteAsZeros)
+     * {
+     *     ISEL,   32
+     * }
+     */
     field = aml_field(AML_GED_IRQ_REG, AML_DWORD_ACC, AML_NOLOCK,
                           AML_WRITE_AS_ZEROS);
     {
@@ -214,8 +222,26 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     }
     aml_append(dev, field);
 
-    /* Append IO regions to write MSI parameters to the hypervisor */
-    /* MADR operation region */
+    /*
+     * Append IO region and fields to let the OSPM write MSI parameters to
+     * the hypervisor.
+     *
+     * MADR operation region
+     *
+     * MNAD: represents the minimum MSI address value on 64 bits. This is
+     *       expected to be provided by the OSPM.
+     *
+     * MXAD: represents the maximum MSI address value on 64 bits. This is
+     *       expected to be provided by the OSPM.
+     *
+     * OperationRegion (MADR, SystemIO, 0xB004, 0x10)
+     * Field (MADR, QWordAcc, NoLock, WriteAsZeros)
+     * {
+     *     MNAD,   64,
+     *     MXAD,   64
+     * }
+     *
+     */
     aml_append(dev, aml_operation_region(AML_GED_MSI_ADDR_REG, AML_SYSTEM_IO,
                aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_MSI_ADDR_OFFSET),
                ACPI_GED_MSI_ADDR_REG_LEN));
@@ -232,7 +258,26 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     }
     aml_append(dev, field);
 
-    /* MDAT operation region */
+    /*
+     * Append IO region and fields to let the OSPM write MSI parameters to
+     * the hypervisor.
+     *
+     * MDAT operation region
+     *
+     * MNDT: represents the minimum MSI data value on 32 bits. This is
+     *       expected to be provided by the OSPM.
+     *
+     * MXDT: represents the maximum MSI data value on 32 bits. This is
+     *       expected to be provided by the OSPM.
+     *
+     * OperationRegion (MDAT, SystemIO, 0xB014, 0x8)
+     * Field (MADR, DWordAcc, NoLock, WriteAsZeros)
+     * {
+     *     MNDT,   32,
+     *     MXDT,   32
+     * }
+     *
+     */
     aml_append(dev, aml_operation_region(AML_GED_MSI_DATA_REG, AML_SYSTEM_IO,
                aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_MSI_DATA_OFFSET),
                ACPI_GED_MSI_DATA_REG_LEN));
