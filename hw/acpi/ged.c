@@ -216,7 +216,15 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     aml_append(dev, aml_operation_region(AML_GED_IRQ_REG, AML_SYSTEM_IO,
                aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_IRQ_SEL_OFFSET),
                ACPI_GED_IRQ_REG_LEN));
-    /* Append new field IREG */
+    /*
+     * Append new IREG OperationRegion and Field
+     *
+     * OperationRegion (IREG, SystemIO, 0xB000, 0x04)
+     * Field (IREG, DWordAcc, NoLock, WriteAsZeros)
+     * {
+     *     ISEL,   32
+     * }
+     */
     field = aml_field(AML_GED_IRQ_REG, AML_DWORD_ACC, AML_NOLOCK,
                           AML_WRITE_AS_ZEROS);
     {
@@ -226,8 +234,38 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     }
     aml_append(dev, field);
 
-    /* Append IO regions to write MSI parameters to the hypervisor */
-    /* MREG operation region */
+    /*
+     * Append IO region and fields to let the OSPM write MSI parameters to
+     * the hypervisor.
+     *
+     * MREG operation region
+     *
+     * MNAH/MNAL: represents the high/low 32 bits of the minimum MSI address
+     *            value on 64 bits. This is expected to be provided by the
+     *            OSPM.
+     *
+     * MXAH/MXAL: represents the high/low 32 bits of the maximum MSI address
+     *            value on 64 bits. This is expected to be provided by the
+     *            OSPM.
+     *
+     * MNDT: represents the minimum MSI data value on 32 bits. This is
+     *       expected to be provided by the OSPM.
+     *
+     * MXDT: represents the maximum MSI data value on 32 bits. This is
+     *       expected to be provided by the OSPM.
+     *
+     * OperationRegion (MREG, SystemIO, 0xB004, 0x10)
+     * Field (MREG, DWordAcc, NoLock, WriteAsZeros)
+     * {
+     *     MNAH,   32,
+     *     MNAL,   32,
+     *     MXAH,   32,
+     *     MXAL,   32,
+     *     MNDT,   32,
+     *     MXDT,   32
+     * }
+     *
+     */
     aml_append(dev, aml_operation_region(AML_GED_MSI_REG, AML_SYSTEM_IO,
                aml_int(ACPI_GED_EVENT_IO_BASE + ACPI_GED_MSI_REG_OFFSET),
                ACPI_GED_MSI_REG_LEN));
