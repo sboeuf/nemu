@@ -126,12 +126,14 @@ GArray *build_madt(GArray *table_data, BIOSLinker *linker, MachineState *ms, Acp
         }
     }
 
+/*
     io_apic = acpi_data_push(table_data, sizeof *io_apic);
     io_apic->type = ACPI_APIC_IO;
     io_apic->length = sizeof(*io_apic);
     io_apic->io_apic_id = ACPI_BUILD_IOAPIC_ID;
     io_apic->address = cpu_to_le32(IO_APIC_DEFAULT_ADDRESS);
     io_apic->interrupt = cpu_to_le32(0);
+*/
 
     if (conf->apic_xrupt_override) {
         intsrcovr = acpi_data_push(table_data, sizeof *intsrcovr);
