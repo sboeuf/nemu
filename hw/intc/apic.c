@@ -37,6 +37,16 @@
 #define SYNC_TO_VAPIC                   0x2
 #define SYNC_ISR_IRR_TO_VAPIC           0x4
 
+#define DEBUG_APIC
+
+#ifdef DEBUG_APIC
+#define DPRINTF(fmt, ...) \
+    do { fprintf(stderr, fmt, ## __VA_ARGS__); } while (0)
+#else
+#define DPRINTF(fmt, ...) \
+    do { } while (0)
+#endif
+
 static APICCommonState *local_apics[MAX_APICS + 1];
 
 #define TYPE_APIC "apic"
@@ -68,6 +78,7 @@ static void apic_sync_vapic(APICCommonState *s, int sync_type)
     size_t length;
     off_t start;
     int vector;
+    DPRINTF("%s\n", __func__);
 
     if (!s->vapic_paddr) {
         return;
@@ -342,15 +353,22 @@ static void apic_update_irq(APICCommonState *s)
 {
     CPUState *cpu;
     DeviceState *dev = (DeviceState *)s;
+    DPRINTF("%s\n", __func__);
 
     cpu = CPU(s->cpu);
     if (!qemu_cpu_is_self(cpu)) {
+        DPRINTF("%s !qemu_cpu_is_self \n", __func__);
         cpu_interrupt(cpu, CPU_INTERRUPT_POLL);
     } else if (apic_irq_pending(s) > 0) {
+        DPRINTF("%s pic_irq_pending(s) > 0 \n", __func__);
         cpu_interrupt(cpu, CPU_INTERRUPT_HARD);
+#ifdef ENABLE_PIC
     } else if (!apic_accept_pic_intr(dev) || !pic_get_output(isa_pic)) {
         cpu_reset_interrupt(cpu, CPU_INTERRUPT_HARD);
     }
+#else
+    } 
+#endif
 }
 
 void apic_poll_irq(DeviceState *dev)
@@ -363,6 +381,7 @@ void apic_poll_irq(DeviceState *dev)
 
 static void apic_set_irq(APICCommonState *s, int vector_num, int trigger_mode)
 {
+    DPRINTF("%s\n", __func__);
     apic_report_irq_delivered(!apic_get_bit(s->irr, vector_num));
 
     apic_set_bit(s->irr, vector_num);
@@ -521,6 +540,7 @@ static void apic_deliver(DeviceState *dev, uint8_t dest, uint8_t dest_mode,
 
 static bool apic_check_pic(APICCommonState *s)
 {
+#ifdef ENABLE_PIC
     DeviceState *dev = (DeviceState *)s;
 
     if (!apic_accept_pic_intr(dev) || !pic_get_output(isa_pic)) {
@@ -528,6 +548,9 @@ static bool apic_check_pic(APICCommonState *s)
     }
     apic_deliver_pic_intr(dev, 1);
     return true;
+#else
+    return false;
+#endif
 }
 
 int apic_get_interrupt(DeviceState *dev)
@@ -728,6 +751,7 @@ static void apic_send_msi(MSIMessage *msi)
     uint8_t trigger_mode = (data >> MSI_DATA_TRIGGER_SHIFT) & 0x1;
     uint8_t delivery = (data >> MSI_DATA_DELIVERY_MODE_SHIFT) & 0x7;
     /* XXX: Ignore redirection hint. */
+    DPRINTF("%s\n", __func__);
     apic_deliver_irq(dest, dest_mode, delivery, vector, trigger_mode);
 }
 
@@ -856,6 +880,7 @@ static const MemoryRegionOps apic_io_ops = {
 static void apic_realize(DeviceState *dev, Error **errp)
 {
     APICCommonState *s = APIC(dev);
+
 
     if (s->id >= MAX_APICS) {
         error_setg(errp, "%s initialization failed. APIC ID %d is invalid",
