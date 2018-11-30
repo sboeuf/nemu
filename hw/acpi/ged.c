@@ -81,10 +81,9 @@ static const MemoryRegionOps ged_ops = {
 };
 
 void acpi_ged_init(MemoryRegion *as, Object *owner, GEDState *ged_st,
-                   hwaddr base_addr, uint32_t ged_irq)
+                   hwaddr base_addr)
 {
     qemu_mutex_init(&ged_st->lock);
-    ged_st->irq = ged_irq;
     memory_region_init_io(&ged_st->io, owner, &ged_ops, ged_st,
                           "acpi-ged-event", ACPI_GED_IO_LEN);
     memory_region_add_subregion(as, base_addr, &ged_st->io);
@@ -131,7 +130,7 @@ static Aml *ged_event_aml(GedEvent *event)
     return NULL;
 }
 
-void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
+void build_ged_aml(Aml *table, const char *name, uint64_t msi_id,
                    GedEvent *events, uint32_t events_size)
 {
     Aml *resrc, *crs, *prs, *srs;
@@ -298,7 +297,7 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     resrc = aml_resource_template();
     aml_append(resrc, aml_interrupt_msi(MSI_DEF_ADDR_MIN, MSI_DEF_ADDR_MAX,
                                         MSI_DEF_DATA_MIN, MSI_DEF_DATA_MAX,
-                                        0xFF));
+                                        msi_id));
 
     /* _CRS method */
     crs = aml_method("_CRS", 0, AML_SERIALIZED);
