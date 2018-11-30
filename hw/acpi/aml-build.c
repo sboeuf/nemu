@@ -865,6 +865,29 @@ Aml *aml_interrupt(AmlConsumerAndProducer con_and_pro,
     return var;
 }
 
+/*
+ * Message Signalled Interrupt Descriptor
+ * Type 1, Large Item Name 0x13
+ */
+Aml *aml_interrupt_msi(uint64_t min_addr, uint64_t max_addr,
+                       uint32_t min_data, uint32_t max_data,
+                       uint32_t msi_id)
+{
+    Aml *var = aml_alloc();
+    uint16_t len = 28;
+
+    build_append_byte(var->buf, 0x93); /* MSI irq descriptor */
+    build_append_byte(var->buf, len & 0xFF); /* Length, bits[7:0] */
+    build_append_byte(var->buf, len >> 8); /* Length, bits[15:8] */
+    build_append_int_noprefix(var->buf, min_addr, 8); /* Minimum MSI address */
+    build_append_int_noprefix(var->buf, max_addr, 8); /* Maximum MSI address */
+    build_append_int_noprefix(var->buf, min_data, 4); /* Minimum MSI data */
+    build_append_int_noprefix(var->buf, max_data, 4); /* Maximum MSI data */
+    build_append_int_noprefix(var->buf, msi_id, 4); /* MSI unique ID */
+
+    return var;
+}
+
 /* ACPI 1.0b: 6.4.2.5 I/O Port Descriptor */
 Aml *aml_io(AmlIODecode dec, uint16_t min_base, uint16_t max_base,
             uint8_t aln, uint8_t len)

@@ -328,6 +328,9 @@ Aml *aml_interrupt(AmlConsumerAndProducer con_and_pro,
                    AmlLevelAndEdge level_and_edge,
                    AmlActiveHighAndLow high_and_low, AmlShared shared,
                    uint32_t *irq_list, uint8_t irq_count);
+Aml *aml_interrupt_msi(uint64_t min_addr, uint64_t max_addr,
+                       uint32_t min_data, uint32_t max_data,
+                       uint32_t msi_id);
 Aml *aml_io(AmlIODecode dec, uint16_t min_base, uint16_t max_base,
             uint8_t aln, uint8_t len);
 Aml *aml_operation_region(const char *name, AmlRegionSpace rs,
