@@ -43,9 +43,6 @@ typedef struct {
     /* number of CPUs */
     uint16_t boot_cpus;
 
-    /* GSI */
-    qemu_irq *gsi;
-
     PCIBus *pci_bus;
     ram_addr_t above_4g_mem_size;
 
@@ -67,6 +64,6 @@ typedef struct {
 
 MemoryRegion *virt_memory_init(VirtMachineState *vms);
 
-DeviceState *virt_acpi_init(qemu_irq *gsi, PCIBus *pci_bus);
+DeviceState *virt_acpi_init(PCIBus *pci_bus);
 
 #endif
