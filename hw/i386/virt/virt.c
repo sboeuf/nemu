@@ -132,13 +132,6 @@ static void virt_machine_done(Notifier *notifier, void *data)
     mc->firmware_build_methods.acpi.setup(ms, &vms->acpi_conf);
 }
 
-static void virt_gsi_handler(void *opaque, int n, int level)
-{
-    qemu_irq *ioapic_irq = opaque;
-
-    qemu_set_irq(ioapic_irq[n], level);
-}
-
 static void virt_ioapic_init(VirtMachineState *vms)
 {
     qemu_irq *ioapic_irq;
@@ -164,8 +157,6 @@ static void virt_ioapic_init(VirtMachineState *vms)
     for (i = 0; i < IOAPIC_NUM_PINS; i++) {
         ioapic_irq[i] = qdev_get_gpio_in(ioapic_dev, i);
     }
-
-    vms->gsi = qemu_allocate_irqs(virt_gsi_handler, ioapic_irq, IOAPIC_NUM_PINS);
 }
 
 static void virt_pci_init(VirtMachineState *vms)
@@ -202,7 +193,7 @@ static void virt_machine_state_init(MachineState *machine)
     virt_memory_init(vms);
     virt_pci_init(vms);
     virt_ioapic_init(vms);
-    vms->acpi = virt_acpi_init(vms->gsi, vms->pci_bus);
+    vms->acpi = virt_acpi_init(vms->pci_bus);
 
     vms->apic_id_limit = cpus_init(machine, false);
 

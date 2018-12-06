@@ -51,8 +51,6 @@ typedef struct VirtAcpiState {
 
     GEDState ged_state;
 
-    qemu_irq *gsi;
-
     AcpiPciHpState pcihp_state;
     PCIBus *pci_bus;
 
@@ -250,7 +248,7 @@ static void virt_device_realize(DeviceState *dev, Error **errp)
     sysbus_add_io(sys, ACPI_REDUCED_RESET_IOPORT, &s->reset_iomem);
 }
 
-DeviceState *virt_acpi_init(qemu_irq *gsi, PCIBus *pci_bus)
+DeviceState *virt_acpi_init(PCIBus *pci_bus)
 {
     DeviceState *dev;
     VirtAcpiState *s;
@@ -258,7 +256,6 @@ DeviceState *virt_acpi_init(qemu_irq *gsi, PCIBus *pci_bus)
     dev = sysbus_create_simple(TYPE_VIRT_ACPI, -1, NULL);
 
     s = VIRT_ACPI(dev);
-    s->gsi = gsi;
     s->pci_bus = pci_bus;
 
     if (pci_bus) {
