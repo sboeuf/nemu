@@ -50,6 +50,18 @@
 #define AML_GED_MSI_MAX_ADDR_LO "MXAL"
 #define AML_GED_MSI_MIN_DATA    "MNDT"
 #define AML_GED_MSI_MAX_DATA    "MXDT"
+#define AML_BUF_MSI_RESOURCE    "BMSI"
+#define AML_BUF_MSI__MN1_FLD    "_MN1"
+#define AML_BUF_MSI__MN2_FLD    "_MN2"
+#define AML_BUF_MSI__MX1_FLD    "_MX1"
+#define AML_BUF_MSI__MX2_FLD    "_MX2"
+#define AML_BUF_MSI__MND_FLD    "_MND"
+#define AML_BUF_MSI__MXD_FLD    "_MXD"
+
+#define MSI_DEF_ADDR_MIN 0x0
+#define MSI_DEF_ADDR_MAX 0xfffffffffffffffe
+#define MSI_DEF_DATA_MIN 0x0
+#define MSI_DEF_DATA_MAX 0xfffffffe
 
 typedef struct Aml Aml;
 

@@ -110,7 +110,7 @@ static Aml *ged_event_aml(GedEvent *event)
 void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
                    GedEvent *events, uint32_t events_size)
 {
-    Aml *crs = aml_resource_template();
+    Aml *resrc, *crs, *prs, *srs;
     Aml *evt, *field;
     Aml *zero = aml_int(0);
     Aml *dev = aml_device("%s", name);
@@ -118,15 +118,10 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     Aml *isel = aml_name(AML_GED_IRQ_SEL);
     uint32_t i;
 
-    /* _CRS interrupt */
-    aml_append(crs, aml_interrupt(AML_CONSUMER, AML_LEVEL, AML_ACTIVE_HIGH,
-                                  AML_EXCLUSIVE, &ged_irq, 1));
-
     /*
-     * For each GED event we:
-     * - Add an interrupt to the CRS section.
-     * - Add a conditional block for each event, inside a while loop.
-     *   This is semantically equivalent to a switch/case implementation.
+     * For each GED event we add a conditional block for each event, inside
+     * a while loop.
+     * This is semantically equivalent to a switch/case implementation.
      */
     evt = aml_method("_EVT", 1, AML_SERIALIZED);
     {
@@ -180,7 +175,6 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
 
     aml_append(dev, aml_name_decl("_HID", aml_string("ACPI0013")));
     aml_append(dev, aml_name_decl("_UID", zero));
-    aml_append(dev, aml_name_decl("_CRS", crs));
 
     /* Append IO region to get selector value */
     aml_append(dev, aml_operation_region(AML_GED_IRQ_REG, AML_SYSTEM_IO,
@@ -226,6 +220,87 @@ void build_ged_aml(Aml *table, const char *name, uint32_t ged_irq,
     }
     aml_append(dev, field);
 
+    /* Create resources */
+    resrc = aml_resource_template();
+    aml_append(resrc, aml_interrupt_msi(MSI_DEF_ADDR_MIN, MSI_DEF_ADDR_MAX,
+                                        MSI_DEF_DATA_MIN, MSI_DEF_DATA_MAX,
+                                        0xFF));
+
+    /* _CRS method */
+    crs = aml_method("_CRS", 0, AML_SERIALIZED);
+    aml_append(crs, aml_name_decl(AML_BUF_MSI_RESOURCE, resrc));
+    field = aml_create_dword_field(aml_name(AML_BUF_MSI_RESOURCE),
+                                   aml_int(0x3), AML_BUF_MSI__MN1_FLD);
+    aml_append(crs, field);
+    field = aml_create_dword_field(aml_name(AML_BUF_MSI_RESOURCE),
+                                   aml_int(0x7), AML_BUF_MSI__MN2_FLD);
+    aml_append(crs, field);
+    field = aml_create_dword_field(aml_name(AML_BUF_MSI_RESOURCE),
+                                   aml_int(0xb), AML_BUF_MSI__MX1_FLD);
+    aml_append(crs, field);
+    field = aml_create_dword_field(aml_name(AML_BUF_MSI_RESOURCE),
+                                   aml_int(0xf), AML_BUF_MSI__MX2_FLD);
+    aml_append(crs, field);
+    field = aml_create_dword_field(aml_name(AML_BUF_MSI_RESOURCE),
+                                   aml_int(0x13), AML_BUF_MSI__MND_FLD);
+    aml_append(crs, field);
+    field = aml_create_dword_field(aml_name(AML_BUF_MSI_RESOURCE),
+                                   aml_int(0x17), AML_BUF_MSI__MXD_FLD);
+    aml_append(crs, field);
+    aml_append(crs, aml_store(aml_name(AML_GED_MSI_MIN_ADDR_HI),
+                              aml_name(AML_BUF_MSI__MN1_FLD)));
+    aml_append(crs, aml_store(aml_name(AML_GED_MSI_MIN_ADDR_LO),
+                              aml_name(AML_BUF_MSI__MN2_FLD)));
+    aml_append(crs, aml_store(aml_name(AML_GED_MSI_MAX_ADDR_HI),
+                              aml_name(AML_BUF_MSI__MX1_FLD)));
+    aml_append(crs, aml_store(aml_name(AML_GED_MSI_MAX_ADDR_LO),
+                              aml_name(AML_BUF_MSI__MX2_FLD)));
+    aml_append(crs, aml_store(aml_name(AML_GED_MSI_MIN_DATA),
+                              aml_name(AML_BUF_MSI__MND_FLD)));
+    aml_append(crs, aml_store(aml_name(AML_GED_MSI_MAX_DATA),
+                              aml_name(AML_BUF_MSI__MXD_FLD)));
+    aml_append(crs, aml_return(aml_name(AML_BUF_MSI_RESOURCE)));
+    aml_append(dev, crs);
+
+    /* _PRS method */
+    prs = aml_method("_PRS", 0, AML_SERIALIZED);
+    aml_append(prs, aml_return(resrc));
+    aml_append(dev, prs);
+
+    /* _SRS method */
+    srs = aml_method("_SRS", 1, AML_SERIALIZED);
+    field = aml_create_dword_field(aml_arg(0), aml_int(0x3),
+                                   AML_BUF_MSI__MN1_FLD);
+    aml_append(srs, field);
+    field = aml_create_dword_field(aml_arg(0), aml_int(0x7),
+                                   AML_BUF_MSI__MN2_FLD);
+    aml_append(srs, field);
+    field = aml_create_dword_field(aml_arg(0), aml_int(0xb),
+                                   AML_BUF_MSI__MX1_FLD);
+    aml_append(srs, field);
+    field = aml_create_dword_field(aml_arg(0), aml_int(0xf),
+                                   AML_BUF_MSI__MX2_FLD);
+    aml_append(srs, field);
+    field = aml_create_dword_field(aml_arg(0), aml_int(0x13),
+                                   AML_BUF_MSI__MND_FLD);
+    aml_append(srs, field);
+    field = aml_create_dword_field(aml_arg(0), aml_int(0x17),
+                                   AML_BUF_MSI__MXD_FLD);
+    aml_append(srs, field);
+    aml_append(srs, aml_store(aml_name(AML_BUF_MSI__MN1_FLD),
+                              aml_name(AML_GED_MSI_MIN_ADDR_HI)));
+    aml_append(srs, aml_store(aml_name(AML_BUF_MSI__MN2_FLD),
+                              aml_name(AML_GED_MSI_MIN_ADDR_LO)));
+    aml_append(srs, aml_store(aml_name(AML_BUF_MSI__MX1_FLD),
+                              aml_name(AML_GED_MSI_MAX_ADDR_HI)));
+    aml_append(srs, aml_store(aml_name(AML_BUF_MSI__MX2_FLD),
+                              aml_name(AML_GED_MSI_MAX_ADDR_LO)));
+    aml_append(srs, aml_store(aml_name(AML_BUF_MSI__MND_FLD),
+                              aml_name(AML_GED_MSI_MIN_DATA)));
+    aml_append(srs, aml_store(aml_name(AML_BUF_MSI__MXD_FLD),
+                              aml_name(AML_GED_MSI_MAX_DATA)));
+    aml_append(dev, srs);
+    
     /* Append _EVT method */
     aml_append(dev, evt);
 
